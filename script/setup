@@ -1,0 +1,38 @@
+#!/bin/bash
+
+set -e
+
+PYENV=ru-nncoref
+cd "$(dirname "$0")/.."
+
+echo "==> Setting up python environment [$PYENV]..."
+conda create -n ru-nncoref -y python=3.8
+conda install -n $PYENV -y pip
+conda run -n $PYENV pip install -r requirements-dev.txt
+
+echo "==> Setting up datasets..."
+echo "===> spacy..."
+conda run -n $PYENV python -m spacy download en_core_web_sm ru_core_news_sm
+
+echo -n "===> checking for ru coref: "
+RU_DATA=data/ru
+test -d $RU_DATA || mkdir -p $RU_DATA
+cd $RU_DATA
+RU_COREF=rucoref_29.10.2015.zip
+RU_COREF_URL=http://rucoref.maimbava.net/files/$RU_COREF
+test -f $RU_COREF && (echo  exists.) || ((echo downloading...) && \
+curl -L -O -C - $RU_COREF_URL)
+test -f Groups.txt || unzip $RU_COREF
+
+echo -n "===> checking for ru word2vec: "
+RU_WORDVEC=214.zip
+RU_WORDVEC_URL=http://vectors.nlpl.eu/repository/20/$RU_WORDVEC
+test -f $RU_WORDVEC && (echo  exists.) || ((echo downloading...) && \
+curl -L -O -C - $RU_WORDVEC_URL)
+test -d 214 || unzip $RU_WORDVEC
+
+cd ../..
+
+conda run -n $PYENV python bin/rucor2conll.py -i data/ru -o data/ru
+
+echo Done.
