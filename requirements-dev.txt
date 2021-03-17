@@ -1,0 +1,7 @@
+spacy>=2.1.0
+cython>=0.25
+tqdm
+torch
+tensorboardX
+pytest
+gensim
